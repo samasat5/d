@@ -81,7 +81,7 @@ def get_optimal_chunks(shape, dtype,
     return chunks
 
 
-class ReplayBuffer:
+class ReplayBuffer2:
     """
     Zarr-based temporal datastructure.
     Assumes first dimension to be time. Only chunk in time dimension.
@@ -145,67 +145,111 @@ class ReplayBuffer:
     # ============= copy constructors ===============
     @classmethod
     def copy_from_store(cls, src_store, store=None, keys=None, 
-            chunks: Dict[str,tuple]=dict(), 
-            compressors: Union[dict, str, numcodecs.abc.Codec]=dict(), 
-            if_exists='replace',
-            **kwargs):
-        """
-        Load to memory.
-        """
-        src_root = zarr.group(src_store) 
-        root = None
+                    chunks=dict(), compressors=dict(), if_exists='replace', **kwargs):
+
         if store is None:
-            # numpy backend
-            meta = dict()
-            for key, value in src_root['meta'].items():
-                if isinstance(value, zarr.Group):
-                    continue
-                if len(value.shape) == 0:
-                    meta[key] = np.array(value)
-                else:
-                    meta[key] = value[:]
+            group = zarr.open(store=src_store, mode='r')  # ✅ key fix here
+
+            meta_group = group['meta']
+            meta = {}
+            for key in meta_group.array_keys():  # ✅ this is the correct fix
+                meta[key] = meta_group[key][:]
 
             if keys is None:
-                keys = src_root['data'].keys()
-            data = dict()
-            for key in keys:
-                arr = src_root['data'][key]
-                data[key] = arr[:]
+                keys = group['data'].keys()
+            data = {key: group['data'][key][:] for key in keys}
 
-            root = {
-                'meta': meta,
-                'data': data
-            }
-        else:
-            root = zarr.group(store=store)
-            # copy without recompression
-            n_copied, n_skipped, n_bytes_copied = zarr.copy_store(source=src_store, dest=store,
-                source_path='/meta', dest_path='/meta', if_exists=if_exists)
-            data_group = root.create_group('data', overwrite=True)
-            if keys is None:
-                keys = src_root['data'].keys()
-            for key in keys:
-                value = src_root['data'][key]
-                cks = cls._resolve_array_chunks(
-                    chunks=chunks, key=key, array=value)
-                cpr = cls._resolve_array_compressor(
-                    compressors=compressors, key=key, array=value)
-                if cks == value.chunks and cpr == value.compressor:
-                    # copy without recompression
-                    this_path = '/data/' + key
-                    n_copied, n_skipped, n_bytes_copied = zarr.copy_store(
-                        source=src_store, dest=store,
-                        source_path=this_path, dest_path=this_path,
-                        if_exists=if_exists
-                    )
-                else:
-                    # copy with recompression
-                    n_copied, n_skipped, n_bytes_copied = zarr.copy(
-                        source=value, dest=data_group, name=key,
-                        chunks=cks, compressor=cpr, if_exists=if_exists
-                    )
-        buffer = cls(root=root)
-        return buffer
+            return cls(root={'meta': meta, 'data': data})
+
+        # 🧱 Zarr-to-Zarr copy (if `store` is provided)
+        root = zarr.group(store=store)
+        src_root = zarr.open(store=src_store, mode='r')  # ✅ also safe here
+
+        # Copy meta
+        zarr.copy_store(
+            source=src_store, dest=store,
+            source_path='/meta', dest_path='/meta', if_exists=if_exists)
+
+        data_group = root.create_group('data', overwrite=True)
+
+        if keys is None:
+            keys = src_root['data'].keys()
+        for key in keys:
+            value = src_root['data'][key]
+            cks = cls._resolve_array_chunks(chunks, key, value)
+            cpr = cls._resolve_array_compressor(compressors, key, value)
+            if cks == value.chunks and cpr == value.compressor:
+                zarr.copy_store(src_store, store, f"/data/{key}", f"/data/{key}", if_exists=if_exists)
+            else:
+                zarr.copy(value, data_group, name=key, chunks=cks, compressor=cpr, if_exists=if_exists)
+
+        return cls(root=root)   
+    
+                                                    # Male khodam
+    # @classmethod
+    # def copy_from_store(cls, src_store, store=None, keys=None, 
+    #         chunks: Dict[str,tuple]=dict(), 
+    #         compressors: Union[dict, str, numcodecs.abc.Codec]=dict(), 
+    #         if_exists='replace',
+    #         **kwargs):
+    #     """
+    #     Load to memory.
+    #     """
+    #     src_root = zarr.group(src_store)
+
+    #     root = None
+    #     if store is None:
+    #         # numpy backend
+    #         meta = dict()
+    #         for key, value in src_root['meta'].items():
+    #             if isinstance(value, zarr.Group):
+    #                 continue
+    #             if len(value.shape) == 0:
+    #                 meta[key] = np.array(value)
+    #             else:
+    #                 meta[key] = value[:]
+
+    #         if keys is None:
+    #             keys = src_root['data'].keys()
+    #         data = dict()
+    #         for key in keys:
+    #             arr = src_root['data'][key]
+    #             data[key] = arr[:]
+
+    #         root = {
+    #             'meta': meta,
+    #             'data': data
+    #         }
+    #     else:
+    #         root = zarr.group(store=store)
+    #         # copy without recompression
+    #         n_copied, n_skipped, n_bytes_copied = zarr.copy_store(source=src_store, dest=store,
+    #             source_path='/meta', dest_path='/meta', if_exists=if_exists)
+    #         data_group = root.create_group('data', overwrite=True)
+    #         if keys is None:
+    #             keys = src_root['data'].keys()
+    #         for key in keys:
+    #             value = src_root['data'][key]
+    #             cks = cls._resolve_array_chunks(
+    #                 chunks=chunks, key=key, array=value)
+    #             cpr = cls._resolve_array_compressor(
+    #                 compressors=compressors, key=key, array=value)
+    #             if cks == value.chunks and cpr == value.compressor:
+    #                 # copy without recompression
+    #                 this_path = '/data/' + key
+    #                 n_copied, n_skipped, n_bytes_copied = zarr.copy_store(
+    #                     source=src_store, dest=store,
+    #                     source_path=this_path, dest_path=this_path,
+    #                     if_exists=if_exists
+    #                 )
+    #             else:
+    #                 # copy with recompression
+    #                 n_copied, n_skipped, n_bytes_copied = zarr.copy(
+    #                     source=value, dest=data_group, name=key,
+    #                     chunks=cks, compressor=cpr, if_exists=if_exists
+    #                 )
+    #     buffer = cls(root=root)
+    #     return buffer
     
     @classmethod
     def copy_from_path(cls, zarr_path, backend=None, store=None, keys=None, 
@@ -220,10 +264,10 @@ class ReplayBuffer:
         if backend == 'numpy':
             print('backend argument is deprecated!')
             store = None
-        group = zarr.open(os.path.expanduser(zarr_path), 'r')
+        group = zarr.open(os.path.expanduser(zarr_path), mode='r')
         return cls.copy_from_store(src_store=group.store, store=store, 
             keys=keys, chunks=chunks, compressors=compressors, 
-            if_exists=if_exists,**kwargs) 
+            if_exists=if_exists, **kwargs)
 
     # ============= save methods ===============
     def save_to_store(self, store, 

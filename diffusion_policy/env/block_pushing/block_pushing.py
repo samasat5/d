@@ -998,19 +998,33 @@ class BlockPushNormalized(gym.Env):
         )  # pylint: disable=protected-access
 
 
-# Make sure we only register once to allow us to reload the module in colab for
+# # Make sure we only register once to allow us to reload the module in colab for
+# # debugging.
+# if "BlockPush-v0" in registration.registry.env_specs:
+#     del registration.registry.env_specs["BlockInsert-v0"]
+#     del registration.registry.env_specs["BlockPush-v0"]
+#     del registration.registry.env_specs["BlockPushNormalized-v0"]
+#     del registration.registry.env_specs["BlockPushRgbNormalized-v0"]
+#     del registration.registry.env_specs["BlockReach-v0"]
+#     del registration.registry.env_specs["BlockReachNormalized-v0"]
+#     del registration.registry.env_specs["BlockReachRgbNormalized-v0"]
+#     del registration.registry.env_specs["SharedBlockInsert-v0"]
+#     del registration.registry.env_specs["SharedBlockPush-v0"]
+#     del registration.registry.env_specs["SharedBlockReach-v0"]
+
+# Make sure we only register once to allow us to reload the module in colab for      # Khodam
 # debugging.
-if "BlockPush-v0" in registration.registry.env_specs:
-    del registration.registry.env_specs["BlockInsert-v0"]
-    del registration.registry.env_specs["BlockPush-v0"]
-    del registration.registry.env_specs["BlockPushNormalized-v0"]
-    del registration.registry.env_specs["BlockPushRgbNormalized-v0"]
-    del registration.registry.env_specs["BlockReach-v0"]
-    del registration.registry.env_specs["BlockReachNormalized-v0"]
-    del registration.registry.env_specs["BlockReachRgbNormalized-v0"]
-    del registration.registry.env_specs["SharedBlockInsert-v0"]
-    del registration.registry.env_specs["SharedBlockPush-v0"]
-    del registration.registry.env_specs["SharedBlockReach-v0"]
+if "BlockPush-v0" in registration.registry:
+    del registration.registry["BlockInsert-v0"]
+    del registration.registry["BlockPush-v0"]
+    del registration.registry["BlockPushNormalized-v0"]
+    del registration.registry["BlockPushRgbNormalized-v0"]
+    del registration.registry["BlockReach-v0"]
+    del registration.registry["BlockReachNormalized-v0"]
+    del registration.registry["BlockReachRgbNormalized-v0"]
+    del registration.registry["SharedBlockInsert-v0"]
+    del registration.registry["SharedBlockPush-v0"]
+    del registration.registry["SharedBlockReach-v0"]
 
 registration.register(
     id="BlockInsert-v0",

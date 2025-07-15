@@ -1,4 +1,4 @@
-import wandb
+# import wandb # Khodam
 import numpy as np
 import torch
 import collections
@@ -6,7 +6,7 @@ import pathlib
 import tqdm
 import dill
 import math
-import wandb.sdk.data_types.video as wv
+# import wandb.sdk.data_types.video as wv  # Khodam
 from diffusion_policy.env.block_pushing.block_pushing_multimodal import BlockPushMultimodal
 from diffusion_policy.gym_util.async_vector_env import AsyncVectorEnv
 from diffusion_policy.gym_util.sync_vector_env import SyncVectorEnv
@@ -36,8 +36,7 @@ class BlockPushLowdimRunner(BaseLowdimRunner):
             abs_action=False,
             obs_eef_target=True,
             tqdm_interval_sec=5.0,
-            n_envs=None,
-            shared_memory=False  # Khodam
+            n_envs=None
         ):
         super().__init__(output_dir)
 
@@ -89,12 +88,12 @@ class BlockPushLowdimRunner(BaseLowdimRunner):
                 assert isinstance(env.env, VideoRecordingWrapper)
                 env.env.video_recoder.stop()
                 env.env.file_path = None
-                if enable_render:
-                    filename = pathlib.Path(output_dir).joinpath(
-                        'media', wv.util.generate_id() + ".mp4")
-                    filename.parent.mkdir(parents=False, exist_ok=True)
-                    filename = str(filename)
-                    env.env.file_path = filename
+                # if enable_render:                 # khodam
+                #     filename = pathlib.Path(output_dir).joinpath(
+                #         'media', wv.util.generate_id() + ".mp4")
+                #     filename.parent.mkdir(parents=False, exist_ok=True)
+                #     filename = str(filename)
+                #     env.env.file_path = filename
 
                 # set seed
                 assert isinstance(env, MultiStepWrapper)
@@ -130,7 +129,7 @@ class BlockPushLowdimRunner(BaseLowdimRunner):
             env_prefixs.append('test/')
             env_init_fn_dills.append(dill.dumps(init_fn))
 
-        env = AsyncVectorEnv(env_fns, shared_memory=shared_memory) # Khodam
+        env = AsyncVectorEnv(env_fns)
         # env = SyncVectorEnv(env_fns)
 
         self.env = env
@@ -265,9 +264,9 @@ class BlockPushLowdimRunner(BaseLowdimRunner):
 
             # visualize sim
             video_path = all_video_paths[i]
-            if video_path is not None:
-                sim_video = wandb.Video(video_path)
-                log_data[prefix+f'sim_video_{seed}'] = sim_video
+            # if video_path is not None:     # Khodam
+            #     sim_video = wandb.Video(video_path)
+            #     log_data[prefix+f'sim_video_{seed}'] = sim_video
 
         # log aggregate metrics
         for prefix, value in total_rewards.items():

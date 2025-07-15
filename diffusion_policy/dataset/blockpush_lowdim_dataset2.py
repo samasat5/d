@@ -1,3 +1,4 @@
+
 from typing import Dict
 import torch
 import numpy as np
@@ -9,7 +10,7 @@ from diffusion_policy.common.sampler import SequenceSampler, get_val_mask
 from diffusion_policy.model.common.normalizer import LinearNormalizer, SingleFieldLinearNormalizer
 from diffusion_policy.dataset.base_dataset import BaseLowdimDataset
 
-class BlockPushLowdimDataset(BaseLowdimDataset):
+class BlockPushLowdimDataset2(BaseLowdimDataset):
     def __init__(self, 
             zarr_path, 
             horizon=1,
@@ -23,8 +24,8 @@ class BlockPushLowdimDataset(BaseLowdimDataset):
             val_ratio=0.0
             ):
         super().__init__()
-        self.replay_buffer = ReplayBuffer.copy_from_path(
-            zarr_path, keys=[obs_key, action_key])
+        self.replay_buffer = ReplayBuffer2.copy_from_path(
+            zarr_path, keys=[obs_key, action_key],backend='numpy')
 
         val_mask = get_val_mask(
             n_episodes=self.replay_buffer.n_episodes, 

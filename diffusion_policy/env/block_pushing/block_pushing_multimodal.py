@@ -775,9 +775,14 @@ class BlockPushHorizontalMultimodal(BlockPushMultimodal):
         # assert dist > MIN_TARGET_DIST
 
 
-if "BlockPushMultimodal-v0" in registration.registry.env_specs:
-    del registration.registry.env_specs["BlockPushMultimodal-v0"]
+# if "BlockPushMultimodal-v0" in registration.registry.env_specs:      # Khodam
+#     del registration.registry.env_specs["BlockPushMultimodal-v0"]
 
+
+if "BlockPushMultimodal-v0" in registration.registry:
+    del registration.registry["BlockPushMultimodal-v0"]
+    
+    
 registration.register(
     id="BlockPushMultimodal-v0", entry_point=BlockPushMultimodal, max_episode_steps=350
 )

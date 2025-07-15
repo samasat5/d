@@ -81,7 +81,7 @@ def get_optimal_chunks(shape, dtype,
     return chunks
 
 
-class ReplayBuffer:
+class ReplayBuffer2:
     """
     Zarr-based temporal datastructure.
     Assumes first dimension to be time. Only chunk in time dimension.
@@ -152,7 +152,8 @@ class ReplayBuffer:
         """
         Load to memory.
         """
-        src_root = zarr.group(src_store) 
+        src_root = zarr.group(src_store)
+
         root = None
         if store is None:
             # numpy backend
@@ -223,7 +224,7 @@ class ReplayBuffer:
         group = zarr.open(os.path.expanduser(zarr_path), 'r')
         return cls.copy_from_store(src_store=group.store, store=store, 
             keys=keys, chunks=chunks, compressors=compressors, 
-            if_exists=if_exists,**kwargs) 
+            if_exists=if_exists, **kwargs)
 
     # ============= save methods ===============
     def save_to_store(self, store, 
