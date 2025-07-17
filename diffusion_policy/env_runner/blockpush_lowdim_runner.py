@@ -36,8 +36,8 @@ class BlockPushLowdimRunner(BaseLowdimRunner):
             abs_action=False,
             obs_eef_target=True,
             tqdm_interval_sec=5.0,
-            n_envs=None,
-            shared_memory=False  # Khodam
+            n_envs=None
+            # shared_memory=False  # Khodam
         ):
         super().__init__(output_dir)
 
@@ -130,8 +130,8 @@ class BlockPushLowdimRunner(BaseLowdimRunner):
             env_prefixs.append('test/')
             env_init_fn_dills.append(dill.dumps(init_fn))
 
-        env = AsyncVectorEnv(env_fns, shared_memory=shared_memory) # Khodam
-        # env = SyncVectorEnv(env_fns)
+        # env = AsyncVectorEnv(env_fns, shared_memory=shared_memory) # Khodam
+        env = SyncVectorEnv(env_fns)
 
         self.env = env
         self.env_fns = env_fns
